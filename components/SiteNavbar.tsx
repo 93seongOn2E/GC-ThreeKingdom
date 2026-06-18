@@ -22,11 +22,11 @@ export function SiteNavbar() {
   const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[var(--border)] bg-[#0d0d0f]/95 backdrop-blur-sm">
-      <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#d4a017] to-transparent" />
+    <nav className="sticky top-0 z-50 border-b border-[var(--border)] bg-[#2f2017]/95 backdrop-blur-sm">
+      <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent" />
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center bg-[#1a0a0a]" style={{ imageRendering: "pixelated" }}>
+          <div className="grid h-8 w-8 place-items-center rounded-sm border border-[#6b4c28] bg-[#1f140f]" style={{ imageRendering: "pixelated" }}>
             <svg width="28" height="28" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <rect width="16" height="16" fill="#1a0a0a" />
               <rect x="6" y="1" width="4" height="2" fill="#c0392b" />
@@ -40,7 +40,7 @@ export function SiteNavbar() {
           </div>
           <div className="leading-tight">
             <div className="text-[11px] font-bold tracking-[0.18em] text-[var(--accent)]">MINECRAFT</div>
-            <div className="text-sm font-bold text-[#f5e6c8]">삼국지 Wiki</div>
+            <div className="text-sm font-bold text-[#f4e0bc]">삼국지 Wiki</div>
           </div>
         </Link>
 
@@ -52,7 +52,7 @@ export function SiteNavbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative flex items-center gap-1.5 px-3 py-2 text-sm transition ${active ? "text-[var(--accent)]" : "text-[#e8d5b0]/70 hover:text-[#e8d5b0]"}`}
+                className={`relative flex items-center gap-1.5 px-3 py-2 text-sm transition ${active ? "text-[#f0c98b]" : "text-[#f1dfc2]/78 hover:text-[#fff2df]"}`}
               >
                 <Icon size={14} />
                 {item.label}
@@ -68,7 +68,7 @@ export function SiteNavbar() {
       </div>
 
       {open && (
-        <div className="border-t border-[var(--border)] bg-[#141418] px-4 py-2 md:hidden">
+        <div className="border-t border-[var(--border)] bg-[#3a281c] px-4 py-2 md:hidden">
           {navItems.map((item) => {
             const active = isActive(item.href);
             return (
@@ -76,7 +76,7 @@ export function SiteNavbar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className={`block px-3 py-2 text-sm ${active ? "text-[var(--accent)]" : "text-[#e8d5b0]/70"}`}
+                className={`block px-3 py-2 text-sm ${active ? "text-[#f0c98b]" : "text-[#f1dfc2]/78"}`}
               >
                 {item.label}
               </Link>

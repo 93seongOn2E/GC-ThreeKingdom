@@ -1,4 +1,4 @@
-﻿export function SiteFooter() {
+export function SiteFooter() {
   return (
     <footer className="mt-12 border-t border-[var(--border)]">
       <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#c0392b] to-transparent" />
@@ -13,7 +13,7 @@
         </div>
         <div>
           <div className="mb-2 font-semibold text-[#e8d5b0]">관리</div>
-          <p className="leading-7">영토 지도, 성 레벨, 영역 배율, 위치 정보를 DB 연결 전 JSON/화면 상태로 관리합니다.</p>
+          <p className="leading-7">영토 지도, 성 레벨, 영역 배율, 위치 정보를 Neon DB와 연동해 관리합니다.</p>
         </div>
       </div>
     </footer>

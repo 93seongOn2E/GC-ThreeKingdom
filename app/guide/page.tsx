@@ -7,8 +7,8 @@ function ContentPage({ title, desc }: { title: string; desc: string }) {
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="pixel-frame p-8">
         <div className="mb-3 text-xs font-bold tracking-[0.24em] text-[var(--accent)]">GUIDE</div>
-        <h1 className="mb-3 text-2xl font-black text-[#f5e6c8]">{title}</h1>
-        <p className="text-sm leading-7 text-[#cdbb98]">{desc}</p>
+        <h1 className="mb-3 text-2xl font-black text-[#f3e7d0]">{title}</h1>
+        <p className="text-sm leading-7 text-[#aa9a82]">{desc}</p>
       </div>
     </div>
   );

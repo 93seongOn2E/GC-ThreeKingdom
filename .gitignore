@@ -1,9 +1,9 @@
-@"
 # dependencies
 node_modules/
 
 # next.js
 .next/
+.next-dev/
 out/
 
 # build
@@ -30,4 +30,3 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
-"@ | Set-Content .gitignore

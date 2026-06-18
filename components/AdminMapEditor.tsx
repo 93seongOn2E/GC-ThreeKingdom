@@ -2,19 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type ForceId = "wei" | "shu" | "wu";
+type ForceId = "위" | "촉" | "오";
 type CastleLevel = 1 | 2 | 3;
 
 type CastleSource = {
+  castleKey: string;
   name: string;
   level: CastleLevel;
   x?: number;
   y?: number;
-  areaScale?: number;
 };
 
 type CastleData = {
   forces: Record<ForceId, CastleSource[]>;
+};
+
+type MapConfig = {
+  counts?: Partial<Record<ForceId, number>>;
 };
 
 type Tile = {
@@ -39,26 +43,34 @@ type Castle = {
   cells: Tile[];
 };
 
-const forceLayouts: Record<ForceId, { label: string; polygon: number[][]; seeds: number[][]; markerSeeds: number[][] }> = {
-  wei: {
+const forceIds: ForceId[] = ["위", "촉", "오"];
+
+const forceThemeClass: Record<ForceId, "wei" | "shu" | "wu"> = {
+  위: "wei",
+  촉: "shu",
+  오: "wu"
+};
+
+const forceLayouts: Record<ForceId, { label: string; polygon: number[][]; markerSeeds: number[][] }> = {
+  위: {
     label: "위나라",
     polygon: [[318, 132], [422, 86], [584, 88], [736, 116], [842, 168], [818, 270], [704, 352], [520, 362], [374, 306], [286, 234]],
-    seeds: [[370, 162], [494, 154], [618, 156], [742, 182], [432, 226], [565, 220], [704, 244], [540, 292], [720, 270]],
     markerSeeds: [[370, 162], [494, 154], [618, 156], [742, 182], [432, 226], [565, 220], [690, 244], [540, 292], [761, 270]]
   },
-  shu: {
+  촉: {
     label: "촉나라",
     polygon: [[176, 330], [334, 302], [494, 322], [606, 374], [604, 476], [520, 588], [352, 616], [196, 562], [144, 436]],
-    seeds: [[240, 354], [362, 326], [490, 346], [560, 408], [250, 456], [386, 444], [510, 488], [314, 548], [452, 560]],
     markerSeeds: [[240, 354], [362, 326], [490, 346], [560, 408], [250, 456], [386, 444], [510, 488], [314, 548], [452, 560]]
   },
-  wu: {
+  오: {
     label: "오나라",
     polygon: [[606, 304], [760, 278], [900, 304], [1030, 372], [1042, 512], [946, 604], [786, 624], [638, 556], [570, 420]],
-    seeds: [[668, 354], [790, 342], [918, 374], [700, 448], [834, 438], [966, 466], [662, 544], [802, 550], [936, 552]],
     markerSeeds: [[668, 354], [790, 342], [918, 374], [700, 448], [834, 438], [966, 466], [662, 544], [802, 550], [936, 552]]
   }
 };
+
+const tileSize = 24;
+const tileGap = 2;
 
 const levelInfo: Record<CastleLevel, { label: string; weight: number; icon: string }> = {
   1: { label: "본성", weight: 1.85, icon: "👑" },
@@ -66,26 +78,23 @@ const levelInfo: Record<CastleLevel, { label: string; weight: number; icon: stri
   3: { label: "지방성", weight: 0.82, icon: "🚩" }
 };
 
-const fallbackCastleData: CastleData = {
-  forces: {
-    wei: ["업", "허창", "낙양", "장안", "진류", "평원", "북평", "하비", "수춘"].map((name, index) => ({ name, level: (index < 2 ? 1 : index < 5 ? 2 : 3) as CastleLevel })),
-    shu: ["성도", "한중", "강주", "자동", "건녕", "영안", "부수", "면죽", "무도"].map((name, index) => ({ name, level: (index < 2 ? 1 : index < 5 ? 2 : 3) as CastleLevel })),
-    wu: ["건업", "무창", "장사", "여강", "회계", "오군", "시상", "강하", "파양"].map((name, index) => ({ name, level: (index < 2 ? 1 : index < 5 ? 2 : 3) as CastleLevel }))
-  }
-};
-
-const forceIds: ForceId[] = ["wei", "shu", "wu"];
-const tileSize = 24;
-const tileGap = 2;
-
-function clampNumber(value: number, min: number, max: number, fallback: number) {
-  if (Number.isNaN(value)) return fallback;
-  return Math.max(min, Math.min(max, value));
+function normalizeCastleSources(castles: CastleSource[]) {
+  return castles.map((castle) => ({
+    ...castle,
+    level: castle.level as CastleLevel,
+    x: Number.isFinite(castle.x) ? castle.x : undefined,
+    y: Number.isFinite(castle.y) ? castle.y : undefined
+  }));
 }
 
-function jitter(seed: number, size: number) {
-  const value = Math.sin(seed * 9301.17) * 10000;
-  return (value - Math.floor(value) - 0.5) * size;
+function normalizeCastleData(data: CastleData): CastleData {
+  return {
+    forces: {
+      위: normalizeCastleSources(data.forces.위 ?? []),
+      촉: normalizeCastleSources(data.forces.촉 ?? []),
+      오: normalizeCastleSources(data.forces.오 ?? [])
+    }
+  };
 }
 
 function pointInPolygon(x: number, y: number, polygon: number[][]) {
@@ -124,28 +133,37 @@ function makeTilesForPolygon(polygon: number[][]) {
 function createCastleSeeds(force: ForceId, sourceCastles: CastleSource[], tiles: Tile[]) {
   const layout = forceLayouts[force];
   const seeds = sourceCastles
-    .map((_, index) => {
-      const fallbackPoint = layout.seeds[index];
-      if (fallbackPoint) return { cx: fallbackPoint[0], cy: fallbackPoint[1] };
+    .map((source, index) => {
+      if (Number.isFinite(source.x) && Number.isFinite(source.y)) {
+        return { cx: source.x as number, cy: source.y as number };
+      }
+
+      const markerSeed = layout.markerSeeds[index];
+      if (markerSeed) {
+        return { cx: markerSeed[0], cy: markerSeed[1] };
+      }
+
       return null;
     })
     .filter(Boolean) as Array<{ cx: number; cy: number }>;
 
-  const sortedTiles = tiles
-    .map((tile, index) => ({ tile, score: Math.sin((index + 1) * 12.9898) * 43758.5453 }))
-    .sort((a, b) => a.score - b.score)
-    .map((item) => item.tile);
+  const remainingTiles = [...tiles];
 
-  while (seeds.length < sourceCastles.length && sortedTiles.length) {
-    let bestTile = sortedTiles[0];
+  while (seeds.length < sourceCastles.length && remainingTiles.length) {
+    let bestTile = remainingTiles[0];
     let bestDistance = -1;
-    sortedTiles.forEach((tile) => {
-      const minDistance = Math.min(...seeds.map((seed) => Math.hypot(seed.cx - tile.cx, seed.cy - tile.cy)));
+
+    remainingTiles.forEach((tile) => {
+      const minDistance = seeds.length === 0
+        ? Number.POSITIVE_INFINITY
+        : Math.min(...seeds.map((seed) => Math.hypot(seed.cx - tile.cx, seed.cy - tile.cy)));
+
       if (minDistance > bestDistance) {
         bestDistance = minDistance;
         bestTile = tile;
       }
     });
+
     seeds.push({ cx: bestTile.cx, cy: bestTile.cy });
   }
 
@@ -156,144 +174,220 @@ function generateForceCastles(force: ForceId, sourceCastles: CastleSource[], pre
   const layout = forceLayouts[force];
   const tiles = makeTilesForPolygon(layout.polygon);
   const seeds = createCastleSeeds(force, sourceCastles, tiles);
+
   const castles: Castle[] = sourceCastles.map((source, index) => {
-    const markerPoint = layout.markerSeeds[index] || [seeds[index].cx, seeds[index].cy];
+    const fallbackSeed = seeds[index] ?? { cx: layout.markerSeeds[index]?.[0] ?? 0, cy: layout.markerSeeds[index]?.[1] ?? 0 };
+    const cityX = Number.isFinite(source.x) ? (source.x as number) : fallbackSeed.cx;
+    const cityY = Number.isFinite(source.y) ? (source.y as number) : fallbackSeed.cy;
+
     return {
-      id: `${force}-${index + 1}`,
+      id: source.castleKey,
       name: source.name,
       level: source.level,
-      areaScale: source.areaScale || 1,
+      areaScale: 1,
       origin: force,
-      owner: previousOwners.get(`${force}-${index + 1}`) || force,
-      cx: Number.isFinite(source.x) ? source.x! : markerPoint[0],
-      cy: Number.isFinite(source.y) ? source.y! : markerPoint[1],
-      territoryCx: seeds[index].cx,
-      territoryCy: seeds[index].cy,
+      owner: previousOwners.get(source.castleKey) ?? force,
+      cx: cityX,
+      cy: cityY,
+      territoryCx: cityX,
+      territoryCy: cityY,
       cells: []
     };
   });
 
-  tiles.forEach((tile) => {
-    let nearest = castles[0];
+  return { force, castles, tiles };
+}
+
+function buildCastles(data: CastleData, counts: Record<ForceId, number>, previousOwners: Map<string, ForceId>) {
+  const regions = forceIds.map((force) => generateForceCastles(force, data.forces[force].slice(0, counts[force]), previousOwners));
+  const castles = regions.flatMap((region) => region.castles);
+  const castleOrder = new Map(regions.flatMap((region) => region.castles.map((castle, index) => [castle.id, index] as const)));
+  const sharedTiles = new Map<string, { tile: Tile; forces: Set<ForceId> }>();
+
+  regions.forEach((region) => {
+    region.tiles.forEach((tile) => {
+      const key = `${tile.x}:${tile.y}`;
+      const existing = sharedTiles.get(key);
+      if (existing) {
+        existing.forces.add(region.force);
+      } else {
+        sharedTiles.set(key, { tile, forces: new Set([region.force]) });
+      }
+    });
+  });
+
+  sharedTiles.forEach(({ tile, forces }) => {
+    let nearest: Castle | undefined;
     let nearestScore = Number.POSITIVE_INFINITY;
-    castles.forEach((castle, index) => {
+
+    castles.forEach((castle) => {
+      if (!forces.has(castle.origin)) return;
+
       const weight = levelInfo[castle.level].weight * castle.areaScale;
       const distance = Math.hypot(tile.cx - castle.territoryCx, tile.cy - castle.territoryCy) / weight;
-      const score = distance + jitter((index + 1) * (tile.cx + tile.cy), 9);
+      const index = castleOrder.get(castle.id) ?? 0;
+      const score = distance + index * 0.01;
+
       if (score < nearestScore) {
         nearestScore = score;
         nearest = castle;
       }
     });
-    nearest.cells.push(tile);
+
+    nearest?.cells.push(tile);
   });
 
   return castles;
 }
 
-function subjectParticle(word: string) {
-  const code = word.charCodeAt(word.length - 1);
-  if (code < 0xac00 || code > 0xd7a3) return "가";
-  return (code - 0xac00) % 28 === 0 ? "가" : "이";
-}
-
-function objectParticle(word: string) {
-  const code = word.charCodeAt(word.length - 1);
-  if (code < 0xac00 || code > 0xd7a3) return "를";
-  return (code - 0xac00) % 28 === 0 ? "를" : "을";
-}
-
-function buildCastles(data: CastleData, counts: Record<ForceId, number>, previousOwners: Map<string, ForceId>) {
-  return forceIds.flatMap((force) => generateForceCastles(force, data.forces[force].slice(0, counts[force]), previousOwners));
-}
-
 export function AdminMapEditor() {
-  const [castleData, setCastleData] = useState<CastleData>(fallbackCastleData);
-  const [counts, setCounts] = useState<Record<ForceId, number>>({ wei: 9, shu: 9, wu: 9 });
+  const [castleData, setCastleData] = useState<CastleData>({
+    forces: {
+      위: [],
+      촉: [],
+      오: []
+    }
+  });
   const [previousOwners, setPreviousOwners] = useState<Map<string, ForceId>>(new Map());
-  const [selectedCityId, setSelectedCityId] = useState("wei-1");
-  const [selectedForce, setSelectedForce] = useState<ForceId>("wei");
-  const [status, setStatus] = useState("JSON 데이터를 불러오는 중입니다.");
-
+  const [selectedCityId, setSelectedCityId] = useState("");
+  const [selectedForce, setSelectedForce] = useState<ForceId>("위");
   useEffect(() => {
-    fetch("/data/castles.json", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data: CastleData) => {
-        setCastleData(data);
-        setCounts({
-          wei: Math.min(9, data.forces.wei.length),
-          shu: Math.min(9, data.forces.shu.length),
-          wu: Math.min(9, data.forces.wu.length)
+    Promise.all([
+      fetch("/api/castles", { cache: "no-store" }).then(async (response) => {
+        const data = await response.json() as CastleData & { message?: string };
+        if (!response.ok) throw new Error(data.message || "성 데이터를 불러오지 못했습니다.");
+        return data;
+      }),
+      fetch("/data/map-config.json", { cache: "no-store" })
+        .then((response) => response.json() as Promise<MapConfig>)
+        .catch(() => ({ counts: { 위: 9, 촉: 9, 오: 9 } }))
+    ])
+      .then(([data, config]) => {
+        const normalized = normalizeCastleData(data);
+        const counts = {
+          위: Math.min(config.counts?.위 ?? 9, normalized.forces.위.length),
+          촉: Math.min(config.counts?.촉 ?? 9, normalized.forces.촉.length),
+          오: Math.min(config.counts?.오 ?? 9, normalized.forces.오.length)
+        };
+
+        setCastleData({
+          forces: {
+            위: normalized.forces.위.slice(0, counts.위),
+            촉: normalized.forces.촉.slice(0, counts.촉),
+            오: normalized.forces.오.slice(0, counts.오)
+          }
         });
-        setStatus("데모 성 데이터를 적용했습니다. 현재 총 27개 성이 배치되어 있습니다.");
+
+        const firstCastle =
+          normalized.forces.위[0] ??
+          normalized.forces.촉[0] ??
+          normalized.forces.오[0];
+        if (firstCastle) setSelectedCityId(firstCastle.castleKey);
       })
-      .catch(() => setStatus("JSON 데이터를 불러오지 못해 기본 DEMO 데이터를 사용합니다."));
+      .catch((error) => {
+        window.alert(error instanceof Error ? error.message : "성 데이터를 불러오지 못했습니다.");
+      });
   }, []);
 
+  const counts = useMemo<Record<ForceId, number>>(() => ({
+    위: castleData.forces.위.length,
+    촉: castleData.forces.촉.length,
+    오: castleData.forces.오.length
+  }), [castleData]);
+
   const castles = useMemo(() => buildCastles(castleData, counts, previousOwners), [castleData, counts, previousOwners]);
-  const selectedCastle = castles.find((castle) => castle.id === selectedCityId) || castles[0];
+  const selectedCastle = castles.find((castle) => castle.id === selectedCityId) ?? castles[0];
 
   useEffect(() => {
-    if (selectedCastle && selectedCityId !== selectedCastle.id) setSelectedCityId(selectedCastle.id);
+    if (selectedCastle && selectedCityId !== selectedCastle.id) {
+      setSelectedCityId(selectedCastle.id);
+    }
   }, [selectedCastle, selectedCityId]);
+
+  useEffect(() => {
+    if (selectedCastle) {
+      setSelectedForce(selectedCastle.owner);
+    }
+  }, [selectedCastle]);
 
   const summary = forceIds.reduce<Record<ForceId, number>>((acc, force) => {
     acc[force] = castles.filter((castle) => castle.owner === force).length;
     return acc;
-  }, { wei: 0, shu: 0, wu: 0 });
+  }, { 위: 0, 촉: 0, 오: 0 });
 
   function updateSelectedCastle(patch: Partial<CastleSource>) {
     if (!selectedCastle) return;
-    const index = Number(selectedCastle.id.split("-")[1]) - 1;
+
     setCastleData((current) => ({
       forces: {
         ...current.forces,
-        [selectedCastle.origin]: current.forces[selectedCastle.origin].map((castle, castleIndex) => (castleIndex === index ? { ...castle, ...patch } : castle))
+        [selectedCastle.origin]: current.forces[selectedCastle.origin].map((castle) => (
+          castle.castleKey === selectedCastle.id
+            ? { ...castle, ...patch }
+            : castle
+        ))
       }
     }));
   }
 
-  function captureSelectedCity() {
+  async function applySelectedCastle() {
     if (!selectedCastle) return;
-    const before = selectedCastle.owner;
-    setPreviousOwners((current) => {
-      const next = new Map(current);
-      next.set(selectedCastle.id, selectedForce);
-      return next;
-    });
-    setStatus(
-      before === selectedForce
-        ? `${selectedCastle.name}${subjectParticle(selectedCastle.name)} 이미 ${forceLayouts[selectedForce].label}의 성입니다.`
-        : `${forceLayouts[before].label}의 ${selectedCastle.name}${objectParticle(selectedCastle.name)} ${forceLayouts[selectedForce].label}가 점령했습니다. ${selectedCastle.cells.length}칸이 넘어갔습니다.`
-    );
-  }
 
-  function applyCounts() {
-    setSelectedCityId("wei-1");
-    setStatus(`성 수를 적용했습니다. 현재 총 ${counts.wei + counts.shu + counts.wu}개 성이 배치되어 있습니다.`);
-  }
+    const x = Math.round(selectedCastle.cx);
+    const y = Math.round(selectedCastle.cy);
 
-  if (!selectedCastle) return null;
+    try {
+      const response = await fetch("/api/castles", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          castleKey: selectedCastle.id,
+          name: selectedCastle.name,
+          level: selectedCastle.level,
+          x,
+          y,
+          kingdom: selectedForce
+        })
+      });
+
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "좌표 저장에 실패했습니다.");
+
+      setPreviousOwners((current) => {
+        const next = new Map(current);
+        next.set(selectedCastle.id, selectedForce);
+        return next;
+      });
+
+      window.alert(`${selectedCastle.name} 정보를 저장했습니다.`);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "정보를 저장하지 못했습니다.");
+    }
+  }
 
   return (
     <div className="admin-map-shell">
-      <section className="admin-map-panel" aria-label="삼국지 영토 지도">
+      <section className="admin-map-panel" aria-label="삼국지 점령 지도">
         <div className="admin-map-topbar">
           <div>
             <p className="admin-eyebrow">Three Kingdoms Territory</p>
             <h2>삼국지 점령 지도</h2>
           </div>
-          <div className="admin-legend" aria-label="세력 색상 범례">
-            <span><i className="wei" />위나라</span>
-            <span><i className="shu" />촉나라</span>
-            <span><i className="wu" />오나라</span>
+          <div className="admin-top-summary" aria-label="세력별 보유 성 수">
+            {forceIds.map((force) => (
+              <div key={force} className={`admin-top-summary-card ${forceThemeClass[force]}`}>
+                <span>{forceLayouts[force].label}</span>
+                <b>{summary[force]}</b>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="admin-map-wrap">
-          <svg id="map" viewBox="0 0 1180 720" role="img" aria-label="위 촉 오 영역이 구분된 삼국지 지도">
+          <svg id="map" viewBox="0 0 1180 720" role="img" aria-label="위 촉 오 영역으로 구분된 삼국지 지도">
             <rect x="0" y="0" width="1180" height="720" fill="#d8bd8b" />
             <image className="admin-map-art" href="/assets/three-kingdoms-scroll-map.png" x="0" y="0" width="1180" height="720" preserveAspectRatio="xMidYMid slice" />
+
             <g id="territories">
               {castles.map((castle) => (
                 <g key={castle.id} className="castle-territory" data-city-id={castle.id} data-level={castle.level}>
@@ -301,7 +395,7 @@ export function AdminMapEditor() {
                     <rect
                       key={`${castle.id}-${index}`}
                       className={`admin-territory ${selectedCityId === castle.id ? "selected" : ""}`}
-                      data-owner={castle.owner}
+                      data-owner={forceThemeClass[castle.owner]}
                       data-city-id={castle.id}
                       data-level={castle.level}
                       x={cell.x}
@@ -310,13 +404,13 @@ export function AdminMapEditor() {
                       height={cell.size}
                       onClick={() => {
                         setSelectedCityId(castle.id);
-                        setStatus(`${castle.name}${subjectParticle(castle.name)} Lv.${castle.level} ${levelInfo[castle.level].label}이며 현재 소유 세력은 ${forceLayouts[castle.owner].label}입니다. (${castle.cells.length}칸)`);
                       }}
                     />
                   ))}
                 </g>
               ))}
             </g>
+
             <g id="cities">
               {castles.map((castle) => (
                 <g key={`city-${castle.id}`}>
@@ -325,98 +419,100 @@ export function AdminMapEditor() {
                 </g>
               ))}
             </g>
-            <text className="admin-force-label" x="760" y="150">위나라</text>
-            <text className="admin-force-label" x="245" y="330">촉나라</text>
-            <text className="admin-force-label" x="910" y="365">오나라</text>
+
+            <text className="admin-force-label wei" x="590" y="68">위나라</text>
+            <text className="admin-force-label shu" x="360" y="680">촉나라</text>
+            <text className="admin-force-label wu" x="865" y="680">오나라</text>
           </svg>
         </div>
       </section>
 
-      <aside className="admin-control-panel" aria-label="성 점령 컨트롤">
+      <aside className="admin-control-panel" aria-label="지도 편집">
         <div className="admin-panel-heading">
           <p className="admin-eyebrow">Control</p>
-          <h2>성 소유권</h2>
+          <h2>점령권 편집</h2>
         </div>
-
-        <div className="admin-count-grid" aria-label="세력별 성 개수 설정">
-          {forceIds.map((force) => (
-            <label className="admin-field compact" key={force}>
-              <span>{forceLayouts[force].label} 성 수</span>
-              <input type="number" min={1} max={castleData.forces[force].length} value={counts[force]} onChange={(event) => setCounts((current) => ({ ...current, [force]: clampNumber(Number(event.target.value), 1, castleData.forces[force].length, current[force]) }))} />
-            </label>
-          ))}
-        </div>
-        <button className="admin-secondary" type="button" onClick={applyCounts}>성 수 적용</button>
 
         <label className="admin-field">
           <span>대상 성</span>
-          <select value={selectedCityId} onChange={(event) => setSelectedCityId(event.target.value)}>
+          <select value={selectedCityId} onChange={(event) => setSelectedCityId(event.target.value)} disabled={!castles.length}>
             {castles.map((castle) => (
               <option key={castle.id} value={castle.id}>{castle.name} · Lv.{castle.level} {levelInfo[castle.level].label} ({forceLayouts[castle.owner].label})</option>
             ))}
           </select>
         </label>
 
-        <section className="admin-edit-panel" aria-label="선택 성 편집">
-          <div className="admin-panel-heading compact-heading">
-            <p className="admin-eyebrow">Admin</p>
-            <h2>선택 성 편집</h2>
+        {selectedCastle ? (
+          <section className="admin-edit-panel" aria-label="선택 성 편집">
+            <div className="admin-panel-heading compact-heading">
+              <p className="admin-eyebrow">Admin</p>
+              <h2>선택 성 편집</h2>
+            </div>
+
+            <label className="admin-field">
+              <span>성 이름</span>
+              <input value={selectedCastle.name} maxLength={12} onChange={(event) => updateSelectedCastle({ name: event.target.value })} />
+            </label>
+
+            <label className="admin-field">
+              <span>성 등급</span>
+              <select value={selectedCastle.level} onChange={(event) => updateSelectedCastle({ level: Number(event.target.value) as CastleLevel })}>
+                <option value={1}>Lv.1 본성</option>
+                <option value={2}>Lv.2 주요성</option>
+                <option value={3}>Lv.3 지방성</option>
+              </select>
+            </label>
+
+            <div className="admin-coord-grid">
+              <label className="admin-field compact">
+                <span>표시 X</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={1180}
+                  value={Math.round(selectedCastle.cx)}
+                  onChange={(event) => updateSelectedCastle({ x: Number(event.target.value) })}
+                />
+              </label>
+
+              <label className="admin-field compact">
+                <span>표시 Y</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={720}
+                  value={Math.round(selectedCastle.cy)}
+                  onChange={(event) => updateSelectedCastle({ y: Number(event.target.value) })}
+                />
+              </label>
+            </div>
+          </section>
+        ) : (
+          <div className="admin-field">
+            <span>상태</span>
+            <p>선택된 성이 없습니다.</p>
           </div>
-          <label className="admin-field">
-            <span>성 이름</span>
-            <input value={selectedCastle.name} maxLength={12} onChange={(event) => updateSelectedCastle({ name: event.target.value })} />
-          </label>
-          <label className="admin-field">
-            <span>성 레벨</span>
-            <select value={selectedCastle.level} onChange={(event) => updateSelectedCastle({ level: Number(event.target.value) as CastleLevel })}>
-              <option value={1}>Lv.1 본성</option>
-              <option value={2}>Lv.2 주요성</option>
-              <option value={3}>Lv.3 지방성</option>
-            </select>
-          </label>
-          <div className="admin-coord-grid">
-            <label className="admin-field compact">
-              <span>표시 X</span>
-              <input type="number" min={0} max={1180} value={Math.round(selectedCastle.cx)} onChange={(event) => updateSelectedCastle({ x: Number(event.target.value) })} />
-            </label>
-            <label className="admin-field compact">
-              <span>표시 Y</span>
-              <input type="number" min={0} max={720} value={Math.round(selectedCastle.cy)} onChange={(event) => updateSelectedCastle({ y: Number(event.target.value) })} />
-            </label>
-            <label className="admin-field compact">
-              <span>영역 배율</span>
-              <input type="number" min={0.4} max={3} step={0.1} value={selectedCastle.areaScale} onChange={(event) => updateSelectedCastle({ areaScale: Number(event.target.value) })} />
-            </label>
-          </div>
-        </section>
+        )}
 
         <div className="admin-field">
           <span>점령 세력</span>
           <div className="admin-segmented" role="group" aria-label="점령 세력 선택">
             {forceIds.map((force) => (
-              <button key={force} type="button" data-force={force} className={selectedForce === force ? "active" : ""} onClick={() => setSelectedForce(force)}>{forceLayouts[force].label}</button>
+              <button
+                key={force}
+                type="button"
+                data-force={forceThemeClass[force]}
+                className={selectedForce === force ? "active" : ""}
+                onClick={() => setSelectedForce(force)}
+                disabled={!selectedCastle}
+              >
+                {forceLayouts[force].label}
+              </button>
             ))}
           </div>
         </div>
-        <button className="admin-capture" type="button" onClick={captureSelectedCity}>점령 적용</button>
 
-        <div className="admin-status" aria-live="polite">{status}</div>
-        <div className="admin-summary">
-          {forceIds.map((force) => (
-            <span key={force} className={force}>{forceLayouts[force].label}<b>{summary[force]}</b></span>
-          ))}
-        </div>
-        <div className="admin-city-list">
-          {castles.map((castle) => {
-            const origin = castle.origin === castle.owner ? "본래 영토" : `${forceLayouts[castle.origin].label} 출신 점령지`;
-            return (
-              <button key={castle.id} className={`admin-city-row level-${castle.level}`} onClick={() => setSelectedCityId(castle.id)}>
-                <strong>{castle.name}<small>Lv.{castle.level} {levelInfo[castle.level].label} · {origin} · {castle.cells.length}칸</small></strong>
-                <span className={`admin-badge ${castle.owner}`}>{forceLayouts[castle.owner].label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <button className="admin-capture" type="button" onClick={applySelectedCastle} disabled={!selectedCastle}>적용</button>
       </aside>
     </div>
   );

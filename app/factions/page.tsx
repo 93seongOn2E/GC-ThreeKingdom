@@ -1,22 +1,138 @@
-﻿export default function FactionsPage() {
+import { getSql } from "@/lib/db";
+import { crewBadgeClassMap, getHiddenJobBadge, nationConfigs } from "@/lib/factions-config";
+
+type MemberRow = {
+  nation: string;
+  crew_name: string;
+  nickname: string;
+  job: string | null;
+  weapon: number | null;
+  armor: number | null;
+  shoes: number | null;
+};
+
+function formatValue(value: number | null) {
+  return value == null ? "-" : value;
+}
+
+export default async function FactionsPage() {
+  const sql = getSql();
+  const members = await sql.query(`
+    SELECT nation, crew_name, nickname, job, weapon, armor, shoes
+    FROM public.member
+    ORDER BY
+      CASE nation
+        WHEN '위나라' THEN 1
+        WHEN '촉나라' THEN 2
+        WHEN '오나라' THEN 3
+        ELSE 9
+      END,
+      CASE role_name
+        WHEN '군주' THEN 1
+        WHEN '장군' THEN 2
+        ELSE 3
+      END,
+      weapon DESC NULLS LAST,
+      nickname
+  `) as MemberRow[];
+
+  const membersByNation = Object.fromEntries(
+    nationConfigs.map((nation) => [
+      nation.key,
+      members.filter((member) => member.nation === nation.key)
+    ])
+  ) as Record<(typeof nationConfigs)[number]["key"], MemberRow[]>;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
-      <div className="mb-6">
-        <div className="mb-2 text-xs font-bold tracking-[0.24em] text-[var(--accent)]">FACTIONS</div>
-        <h1 className="text-2xl font-black text-[#f3e7d0]">세력 정보</h1>
+    <div className="mx-auto max-w-7xl px-4 py-10 font-['Noto_Sans_KR','Malgun_Gothic',sans-serif]">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-[#f3e7d0]">세력 정보</h1>
+        </div>
+
+        <div className="pixel-frame px-4 py-3">
+          <div className="mb-2 text-[12px] font-extrabold tracking-[-0.01em] text-[#dbc292]">히든 직업 배지</div>
+          <div className="flex flex-wrap gap-2 text-[12px] font-bold">
+            <span className="inline-flex items-center rounded-full bg-[#f4d35e]/20 px-2.5 py-1 text-[#ffe79a] ring-1 ring-[#f4d35e]/40">
+              👑군주
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[#b58cff]/20 px-2.5 py-1 text-[#eadcff] ring-1 ring-[#b58cff]/40">
+              도적계열
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[#ffb86c]/20 px-2.5 py-1 text-[#ffe6c7] ring-1 ring-[#ffb86c]/40">
+              전사계열
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[#8fa86b]/20 px-2.5 py-1 text-[#eef7dd] ring-1 ring-[#8fa86b]/40">
+              궁수계열
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[#7d8cff]/20 px-2.5 py-1 text-[#e6e9ff] ring-1 ring-[#7d8cff]/40">
+              법사계열
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[#73e0cf]/20 px-2.5 py-1 text-[#dcfffa] ring-1 ring-[#73e0cf]/40">
+              힐러계열
+            </span>
+          </div>
+        </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {[
-          ["위", "#2f73c8", "북방 중심의 강력한 군사 세력"],
-          ["촉", "#2f9b5f", "서남부 산악 지형을 기반으로 한 세력"],
-          ["오", "#d63d35", "강동과 수로를 장악한 해양 세력"]
-        ].map(([name, color, desc]) => (
-          <section key={name} className="pixel-frame p-5">
-            <div className="mb-3 h-2 w-16" style={{ background: color }} />
-            <h2 className="mb-2 text-xl font-bold text-[#f3e7d0]">{name}나라</h2>
-            <p className="text-sm leading-6 text-[#aa9a82]">{desc}</p>
-          </section>
-        ))}
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        {nationConfigs.map((nation) => {
+          const rows = membersByNation[nation.key] ?? [];
+
+          return (
+            <section key={nation.key} className="pixel-frame overflow-hidden">
+              <div className="border-b border-[var(--border)] px-5 py-5">
+                <div className="mb-3 h-2 w-16" style={{ background: nation.color }} />
+                <h2 className="mb-2 text-2xl font-extrabold tracking-[-0.02em] text-[#f3e7d0]">{nation.short}나라</h2>
+                <p className="text-sm font-medium leading-6 text-[#aa9a82]">{nation.description}</p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse text-[13px] leading-5">
+                  <thead>
+                    <tr className="bg-white/[0.03] text-left text-[#dbc292]">
+                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">크루</th>
+                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">이름</th>
+                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">직업</th>
+                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">무기</th>
+                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">갑옷</th>
+                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">신발</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((member) => {
+                      const crewBadgeClass = crewBadgeClassMap[member.crew_name] ?? "bg-white/10 text-[#f3e7d0] ring-white/10";
+                      const hiddenJob = getHiddenJobBadge(member.job);
+
+                      return (
+                        <tr key={`${member.nation}-${member.nickname}`} className="border-t border-[rgba(212,167,86,0.14)] text-[#f3e7d0]">
+                          <td className="whitespace-nowrap px-3 py-3">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-bold ring-1 ${crewBadgeClass}`}>
+                              {member.crew_name}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3 text-[14px] font-bold tracking-[-0.01em]">{member.nickname}</td>
+                          <td className="whitespace-nowrap px-3 py-3 font-medium">
+                            {hiddenJob ? (
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-extrabold ring-1 ${hiddenJob.className}`}>
+                                👑{member.job}
+                              </span>
+                            ) : (
+                              <span>{member.job ?? "-"}</span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3 font-medium text-[#cdb487]">{formatValue(member.weapon)}</td>
+                          <td className="whitespace-nowrap px-3 py-3 font-medium text-[#cdb487]">{formatValue(member.armor)}</td>
+                          <td className="whitespace-nowrap px-3 py-3 font-medium text-[#cdb487]">{formatValue(member.shoes)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );

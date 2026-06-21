@@ -7,6 +7,7 @@ type MemberRow = {
   nickname: string;
   job: string | null;
   weapon: number | null;
+  helmet: number | null;
   armor: number | null;
   shoes: number | null;
 };
@@ -18,7 +19,7 @@ function formatValue(value: number | null) {
 export default async function FactionsPage() {
   const sql = getSql();
   const members = await sql.query(`
-    SELECT nation, crew_name, nickname, job, weapon, armor, shoes
+    SELECT nation, crew_name, nickname, job, weapon, helmet, armor, shoes
     FROM public.member
     ORDER BY
       CASE nation
@@ -88,15 +89,16 @@ export default async function FactionsPage() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse text-[13px] leading-5">
+                <table className="min-w-full table-auto border-collapse text-[13px] leading-5">
                   <thead>
-                    <tr className="bg-white/[0.03] text-left text-[#dbc292]">
-                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">크루</th>
-                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">이름</th>
-                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">직업</th>
-                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">무기</th>
-                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">갑옷</th>
-                      <th className="px-3 py-3 text-[12px] font-extrabold tracking-[-0.01em]">신발</th>
+                    <tr className="bg-white/[0.03] text-[#dbc292]">
+                      <th className="w-[88px] whitespace-nowrap px-2 py-3 text-center text-[12px] font-extrabold tracking-[-0.01em]">크루</th>
+                      <th className="whitespace-nowrap px-2 py-3 text-center text-[12px] font-extrabold tracking-[-0.01em]">이름</th>
+                      <th className="whitespace-nowrap px-2 py-3 text-center text-[12px] font-extrabold tracking-[-0.01em]">직업</th>
+                      <th className="w-[52px] whitespace-nowrap px-2 py-3 text-center text-[11px] font-extrabold tracking-[-0.01em]">무기</th>
+                      <th className="w-[52px] whitespace-nowrap px-2 py-3 text-center text-[11px] font-extrabold tracking-[-0.01em]">투구</th>
+                      <th className="w-[52px] whitespace-nowrap px-2 py-3 text-center text-[11px] font-extrabold tracking-[-0.01em]">갑옷</th>
+                      <th className="w-[52px] whitespace-nowrap px-2 py-3 text-center text-[11px] font-extrabold tracking-[-0.01em]">신발</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -106,13 +108,13 @@ export default async function FactionsPage() {
 
                       return (
                         <tr key={`${member.nation}-${member.nickname}`} className="border-t border-[rgba(212,167,86,0.14)] text-[#f3e7d0]">
-                          <td className="whitespace-nowrap px-3 py-3">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-bold ring-1 ${crewBadgeClass}`}>
+                          <td className="whitespace-nowrap px-2 py-3 text-center">
+                            <span className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-bold ring-1 ${crewBadgeClass}`}>
                               {member.crew_name}
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-[14px] font-bold tracking-[-0.01em]">{member.nickname}</td>
-                          <td className="whitespace-nowrap px-3 py-3 font-medium">
+                          <td className="whitespace-nowrap px-2 py-3 text-center text-[14px] font-bold tracking-[-0.01em]">{member.nickname}</td>
+                          <td className="whitespace-nowrap px-2 py-3 text-center font-medium">
                             {hiddenJob ? (
                               <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-extrabold ring-1 ${hiddenJob.className}`}>
                                 👑{member.job}
@@ -121,9 +123,10 @@ export default async function FactionsPage() {
                               <span>{member.job ?? "-"}</span>
                             )}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 font-medium text-[#cdb487]">{formatValue(member.weapon)}</td>
-                          <td className="whitespace-nowrap px-3 py-3 font-medium text-[#cdb487]">{formatValue(member.armor)}</td>
-                          <td className="whitespace-nowrap px-3 py-3 font-medium text-[#cdb487]">{formatValue(member.shoes)}</td>
+                          <td className="whitespace-nowrap px-2 py-3 text-center font-medium text-[#cdb487]">{formatValue(member.weapon)}</td>
+                          <td className="whitespace-nowrap px-2 py-3 text-center font-medium text-[#cdb487]">{formatValue(member.helmet)}</td>
+                          <td className="whitespace-nowrap px-2 py-3 text-center font-medium text-[#cdb487]">{formatValue(member.armor)}</td>
+                          <td className="whitespace-nowrap px-2 py-3 text-center font-medium text-[#cdb487]">{formatValue(member.shoes)}</td>
                         </tr>
                       );
                     })}

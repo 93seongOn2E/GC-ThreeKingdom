@@ -3,19 +3,19 @@ export const nationConfigs = [
     key: "위나라",
     short: "위",
     color: "#2f73c8",
-    description: "북방 중심의 강력한 군사 세력"
+    description: "조경훈의 버인협회를 중심으로, 박재박의 털즈란과 로기다의 로스타시티라는 변수를 품은 전통의 강호 세력"
   },
   {
     key: "촉나라",
     short: "촉",
     color: "#2f9b5f",
-    description: "서남부 산악 지형을 기반으로 한 세력"
+    description: "감스트의 버컴퍼니의 자본력과 꾸티뉴의 꾸한성의 피지컬이 결집된 공격적인 신흥 세력"
   },
   {
     key: "오나라",
     short: "오",
     color: "#d63d35",
-    description: "강동과 수로를 장악한 해양 세력"
+    description: "지피티의 지력사무소, 홍타쿠의 홍피스, 가습기의 가무소 연합으로 균형감 있게 버티는 연합 세력"
   }
 ] as const;
 

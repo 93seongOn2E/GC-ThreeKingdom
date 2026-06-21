@@ -15,11 +15,24 @@ type CastleRow = {
   map_y: string | null;
 };
 
-const forceByKingdom: Record<ForceId, ForceId> = {
-  위: "위",
-  촉: "촉",
-  오: "오"
+type CastlePayload = {
+  castleKey: string;
+  name: string;
+  level: 1 | 2 | 3;
+  owner: ForceId;
+  x?: number;
+  y?: number;
+  areaScale: number;
 };
+
+const emptyForces: Record<ForceId, CastlePayload[]> = { 위: [], 촉: [], 오: [] };
+
+function getOriginForce(castleKey: string): ForceId | null {
+  if (castleKey.startsWith("위-")) return "위";
+  if (castleKey.startsWith("촉-")) return "촉";
+  if (castleKey.startsWith("오-")) return "오";
+  return null;
+}
 
 export async function GET() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -33,26 +46,25 @@ export async function GET() {
     const rows = await sql`
       SELECT castle_key, name, kingdom, level, map_x, map_y
       FROM public.castle
-      ORDER BY kingdom, sort_order, id
+      WHERE is_use = TRUE
+      ORDER BY sort_order, id
     ` as CastleRow[];
 
-    const forces: Record<ForceId, Array<{
-      castleKey: string;
-      name: string;
-      level: 1 | 2 | 3;
-      x?: number;
-      y?: number;
-      areaScale: number;
-    }>> = { 위: [], 촉: [], 오: [] };
+    const forces: Record<ForceId, CastlePayload[]> = {
+      위: [],
+      촉: [],
+      오: []
+    };
 
     rows.forEach((row) => {
-      const force = forceByKingdom[row.kingdom];
-      if (!force) return;
+      const origin = getOriginForce(row.castle_key);
+      if (!origin) return;
 
-      forces[force].push({
+      forces[origin].push({
         castleKey: row.castle_key,
         name: row.name,
         level: row.level as 1 | 2 | 3,
+        owner: row.kingdom,
         ...(row.map_x === null ? {} : { x: Number(row.map_x) }),
         ...(row.map_y === null ? {} : { y: Number(row.map_y) }),
         areaScale: 1
@@ -67,7 +79,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const token = request.headers.get("cookie")
+  const token = request.headers
+    .get("cookie")
     ?.split(";")
     .map((item) => item.trim())
     .find((item) => item.startsWith(`${ADMIN_SESSION_COOKIE}=`))

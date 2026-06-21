@@ -9,16 +9,13 @@ type CastleSource = {
   castleKey: string;
   name: string;
   level: CastleLevel;
+  owner: ForceId;
   x?: number;
   y?: number;
 };
 
 type CastleData = {
   forces: Record<ForceId, CastleSource[]>;
-};
-
-type MapConfig = {
-  counts?: Partial<Record<ForceId, number>>;
 };
 
 type Tile = {
@@ -70,8 +67,8 @@ const forceLayouts: Record<ForceId, { label: string; polygon: number[][]; marker
 
 const levelInfo: Record<CastleLevel, { label: string; weight: number; icon: string }> = {
   1: { label: "본성", weight: 2.85, icon: "👑" },
-  2: { label: "주요성", weight: 2.25, icon: "🏰" },
-  3: { label: "지방성", weight: 1.82, icon: "🚩" }
+  2: { label: "주요성", weight: 2.25, icon: "🏯" },
+  3: { label: "지방성", weight: 1.82, icon: "🏰" }
 };
 
 const tileSize = 24;
@@ -165,7 +162,7 @@ function generateForceCastles(force: ForceId, sourceCastles: CastleSource[]) {
       name: source.name,
       level: source.level,
       origin: force,
-      owner: force,
+      owner: source.owner,
       cx: cityX,
       cy: cityY,
       territoryCx: cityX,
@@ -220,29 +217,17 @@ function buildCastles(data: CastleData) {
 
 export function MapViewer({ compact = false }: { compact?: boolean }) {
   const [castleData, setCastleData] = useState<CastleData>({ forces: { 위: [], 촉: [], 오: [] } });
-  const [counts, setCounts] = useState<Record<ForceId, number>>({ 위: 9, 촉: 9, 오: 9 });
   const [selectedCityId, setSelectedCityId] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/castles", { cache: "no-store" }).then((response) => response.json() as Promise<CastleData>),
-      fetch("/data/map-config.json", { cache: "no-store" })
-        .then((response) => response.json() as Promise<MapConfig>)
-        .catch(() => ({ counts: { 위: 9, 촉: 9, 오: 9 } }))
-    ])
-      .then(([data, config]) => {
-        const nextCounts = {
-          위: Math.min(config.counts?.위 ?? 9, data.forces.위?.length ?? 0),
-          촉: Math.min(config.counts?.촉 ?? 9, data.forces.촉?.length ?? 0),
-          오: Math.min(config.counts?.오 ?? 9, data.forces.오?.length ?? 0)
-        };
-
-        setCounts(nextCounts);
+    fetch("/api/castles", { cache: "no-store" })
+      .then((response) => response.json() as Promise<CastleData>)
+      .then((data) => {
         setCastleData({
           forces: {
-            위: (data.forces.위 ?? []).slice(0, nextCounts.위),
-            촉: (data.forces.촉 ?? []).slice(0, nextCounts.촉),
-            오: (data.forces.오 ?? []).slice(0, nextCounts.오)
+            위: data.forces.위 ?? [],
+            촉: data.forces.촉 ?? [],
+            오: data.forces.오 ?? []
           }
         });
 
@@ -255,9 +240,10 @@ export function MapViewer({ compact = false }: { compact?: boolean }) {
   const castles = useMemo(() => buildCastles(castleData), [castleData]);
 
   const summary = forceIds.reduce<Record<ForceId, number>>((acc, force) => {
-    acc[force] = counts[force];
+    acc[force] = castles.filter((castle) => castle.owner === force).length;
     return acc;
   }, { 위: 0, 촉: 0, 오: 0 });
+
   const renderMapLayers = () => (
     <>
       <rect x="0" y="0" width="1180" height="720" fill="#d8bd8b" />
@@ -301,7 +287,7 @@ export function MapViewer({ compact = false }: { compact?: boolean }) {
 
   return (
     <section className={`map-viewer-shell pixel-frame overflow-hidden ${compact ? "compact p-3 md:p-4" : "p-4 md:p-6"}`}>
-      <div className={`flex flex-col md:flex-row md:items-end md:justify-between ${compact ? "mb-3 gap-3" : "mb-4 gap-4"}`}>
+      <div className={`flex flex-col gap-3 md:mb-4 md:flex-row md:items-end md:justify-between ${compact ? "mb-3" : "mb-4"}`}>
         <div>
           <h2 className="text-2xl font-black text-[#f3e7d0]">삼국지 점령 지도</h2>
         </div>

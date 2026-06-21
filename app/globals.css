@@ -299,6 +299,10 @@ button, input, select { font: inherit; }
 .admin-city-label.level-2 { font-size: 18px; }
 .admin-city-label.level-3 { font-size: 16px; }
 
+.map-viewer-shell .admin-city-label.level-1 { font-size: 23px; }
+.map-viewer-shell .admin-city-label.level-2 { font-size: 21px; }
+.map-viewer-shell .admin-city-label.level-3 { font-size: 19px; }
+
 .admin-force-label {
   pointer-events: none;
   font-size: 36px;
@@ -410,7 +414,7 @@ button, input, select { font: inherit; }
 
 .admin-capture,
 .admin-secondary {
-  height: 46px;
+  height: 42px;
   border: 0;
   border-radius: 8px;
   color: white;
@@ -419,8 +423,85 @@ button, input, select { font: inherit; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 10px 20px rgba(0,0,0,.16);
 }
 
-.admin-capture { background: linear-gradient(180deg, #413227, #261c15); }
-.admin-secondary { background: linear-gradient(180deg, #9f6a39, #734923); }
+.admin-capture {
+  background: linear-gradient(180deg, #2c8a57, #1b5d39);
+  color: #ffffff;
+}
+
+.admin-secondary {
+  background: linear-gradient(180deg, #3e79d4, #2c57a8);
+  color: #ffffff;
+}
+
+.admin-btn-save,
+.admin-btn-edit,
+.admin-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 66px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-weight: 900;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 20px rgba(0,0,0,.18);
+}
+
+.admin-btn-save {
+  background: linear-gradient(180deg, #2c8a57, #1b5d39);
+}
+
+.admin-btn-save-wei,
+.admin-btn-save-shu,
+.admin-btn-save-wu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 66px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-weight: 900;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 10px 20px rgba(0,0,0,.18);
+}
+
+.admin-btn-save-wei {
+  background: linear-gradient(180deg, #4b86e8, #2c57a8);
+}
+
+.admin-btn-save-shu {
+  background: linear-gradient(180deg, #2c8a57, #1b5d39);
+}
+
+.admin-btn-save-wu {
+  background: linear-gradient(180deg, #b43d2f, #86271f);
+}
+
+.admin-btn-edit {
+  background: linear-gradient(180deg, #d4a756, #9d722f);
+}
+
+.admin-btn-delete {
+  background: linear-gradient(180deg, #b43d2f, #86271f);
+}
+
+.admin-btn-save:disabled,
+.admin-btn-save-wei:disabled,
+.admin-btn-save-shu:disabled,
+.admin-btn-save-wu:disabled,
+.admin-btn-edit:disabled,
+.admin-btn-delete:disabled,
+.admin-capture:disabled,
+.admin-secondary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
 
 .admin-status,
 .admin-summary {
@@ -511,6 +592,8 @@ button, input, select { font: inherit; }
 .chronicle-list {
   position: relative;
   display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
   flex: 1;
   height: 0;
   gap: 14px;

@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AdminMapEditor } from "@/components/AdminMapEditor";
+import { AdminFactionsEditor } from "@/components/AdminFactionsEditor";
 import { AdminSectionNav } from "@/components/AdminSectionNav";
 import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/admin-auth";
 
-export default async function AdminMapPage() {
+export default async function AdminFactionsPage() {
   const cookieStore = await cookies();
   const session = verifySessionToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
 
@@ -13,18 +13,14 @@ export default async function AdminMapPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1500px] px-4 py-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-6 font-['Noto_Sans_KR','Malgun_Gothic',sans-serif]">
       <div className="mb-4">
         <div className="mb-2 text-xs font-bold tracking-[0.24em] text-[var(--accent)]">ADMIN</div>
-        <div>
-          <h1 className="text-2xl font-black text-[#f3e7d0]">영토 지도 관리자</h1>
-          <p className="mt-1 text-sm text-[#aa9a82]">
-            Wiki 화면에 사용할 성 이름, 성 등급, 위치, 영역 배율, 점령 세력을 직접 편집합니다.
-          </p>
-        </div>
+        <h1 className="text-2xl font-black text-[#f3e7d0]">세력 정보 관리자</h1>
+        <p className="mt-1 text-sm text-[#aa9a82]">세력 페이지에 표시되는 직업, 무기, 갑옷, 신발 값을 직접 편집합니다.</p>
       </div>
       <AdminSectionNav />
-      <AdminMapEditor />
+      <AdminFactionsEditor />
     </div>
   );
 }

@@ -79,7 +79,7 @@ export function AdminAuthForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="admin-capture h-12 rounded-lg disabled:cursor-not-allowed disabled:opacity-60"
+        className="admin-btn-save h-12 rounded-lg disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "처리 중..." : "로그인"}
       </button>

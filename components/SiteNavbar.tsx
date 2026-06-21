@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 const baseNavItems = [
   { href: "/", label: "홈", icon: Home },
   { href: "/factions", label: "세력", icon: Swords },
-  { href: "/items", label: "지통실", icon: Radio },
+  { href: "/broadcast", label: "지통실", icon: Radio },
   { href: "/guide", label: "가이드", icon: BookOpen }
 ];
 
@@ -105,7 +105,7 @@ export function SiteNavbar() {
       <header className="site-chrome-bg fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-[var(--border)] px-4 md:hidden">
         <Link href="/" className="flex items-center gap-2.5">
           <Image src="/assets/gamst-three-kingdoms-banner-source.png" alt="감컴퍼니 삼국지서버" width={2048} height={749} className="h-9 w-auto object-contain" priority />
-          <span className="text-sm font-bold text-[#f4e0bc]">삼국지 Wiki</span>
+          <span className="text-sm font-bold text-[#f4e0bc]">감컴퍼니 삼국지서버</span>
         </Link>
         <button type="button" onClick={() => setOpen(true)} className="grid h-10 w-10 place-items-center text-[#f0c98b]" aria-label="메뉴 열기">
           <Menu size={22} />

@@ -4,10 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { MapViewer } from "@/components/MapViewer";
 
 export type ChronicleEntry = {
-  force: "위" | "촉" | "오";
+  nations: string[];
   date: string;
   content: string;
 };
+
+function getNationThemeClass(nation: string) {
+  if (nation === "위나라") return "wei";
+  if (nation === "촉나라") return "shu";
+  if (nation === "오나라") return "wu";
+  return "neutral";
+}
 
 export function HomeOverview({ chronicle }: { chronicle: ChronicleEntry[] }) {
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -51,13 +58,20 @@ export function HomeOverview({ chronicle }: { chronicle: ChronicleEntry[] }) {
 
         <div className="chronicle-list">
           {chronicle.map((entry, index) => (
-            <article key={`${entry.force}-${entry.date}-${index}`} className="chronicle-item">
+            <article key={`${entry.date}-${entry.content}-${index}`} className="chronicle-item">
+              <time className="chronicle-date">{entry.date}</time>
+
               <div className="chronicle-meta">
-                <time className="chronicle-date">{entry.date}</time>
-                <span className={`chronicle-force ${entry.force === "위" ? "wei" : entry.force === "촉" ? "shu" : "wu"}`}>
-                  {entry.force}나라
-                </span>
+                {entry.nations.map((nation) => (
+                  <span
+                    key={`${entry.date}-${nation}-${index}`}
+                    className={`chronicle-force ${getNationThemeClass(nation)}`}
+                  >
+                    {nation}
+                  </span>
+                ))}
               </div>
+
               <p className="chronicle-content">{entry.content}</p>
             </article>
           ))}

@@ -8,8 +8,8 @@ import { SiteNavbar } from "@/components/SiteNavbar";
 import { ADMIN_SESSION_COOKIE, verifySessionToken } from "@/lib/admin-auth";
 
 export const metadata: Metadata = {
-  title: "Minecraft 삼국지 Wiki",
-  description: "Minecraft 삼국지 Wiki와 영토 관리자"
+  title: "감컴퍼니 삼국지서버",
+  description: "감컴퍼니 삼국지서버"
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

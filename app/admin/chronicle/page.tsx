@@ -20,7 +20,7 @@ export default async function AdminChroniclePage() {
         <p className="mt-1 text-sm text-[#aa9a82]">발생일, 국가, 내용을 직접 추가하고 수정하거나 삭제할 수 있습니다.</p>
       </div>
       <AdminSectionNav role={session.role} />
-      <AdminChronicleEditor />
+      <AdminChronicleEditor role={session.role} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { AdminSession } from "@/lib/admin-auth";
 
-type AuditAction = "create" | "update" | "delete";
+type AuditAction = "create" | "update" | "delete" | "approve" | "reject";
 
 type AuditInput = {
   entityType: "castle" | "member" | "chronicle";

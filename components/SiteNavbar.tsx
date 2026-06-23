@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 const baseNavItems = [
   { href: "/", label: "홈", icon: Home },
-  { href: "/factions", label: "세력", icon: Swords },
+  { href: "/factions", label: "장비현황", icon: Swords },
   { href: "/broadcast", label: "지통실", icon: Radio },
   { href: "/multiview", label: "멀티뷰", icon: Monitor }
 ];
@@ -60,7 +60,7 @@ function SidebarContent({ pathname, onNavigate, adminAuthenticated }: { pathname
       </nav>
 
       <div className="border-t border-[var(--border)] px-5 py-4 text-[11px] leading-5 text-[#7f6f58]">
-        GAMST COMPANY<br />THREE KINGDOMS WIKI
+        감컴퍼니 삼국지서버
       </div>
     </>
   );

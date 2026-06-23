@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Monitor, Radio, Swords } from "lucide-react";
 import { HomeOverview } from "@/components/HomeOverview";
+import { RecruitAdminPopup } from "@/components/RecruitAdminPopup";
 import { getCachedCastleData, getCachedChronicleData } from "@/lib/public-data";
 
 
 const baseCards = [
-  { href: "/factions", title: "세력 정보", desc: "위, 촉, 오 세력의 특징과 운영 정보를 관리합니다.", icon: Swords },
+  { href: "/factions", title: "장비현황", desc: "위, 촉, 오 멤버의 직업과 장비 현황을 확인합니다.", icon: Swords },
   { href: "/broadcast", title: "지통실", desc: "방송, 공지, 전달 정보를 시각적으로 관리합니다.", icon: Radio }
 ];
 
@@ -22,6 +23,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
+      <RecruitAdminPopup />
       <HomeOverview chronicle={chronicle} castleData={castleData} />
 
       <section className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

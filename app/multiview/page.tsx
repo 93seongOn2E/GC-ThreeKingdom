@@ -1,8 +1,7 @@
 import { getSql } from "@/lib/db";
 import { MultiViewBuilder, type MultiViewMemberRow } from "@/components/MultiViewBuilder";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 15;
 
 export default async function MultiViewPage() {
   const sql = getSql();

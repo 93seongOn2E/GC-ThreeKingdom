@@ -4,8 +4,13 @@ export function SiteFooter() {
       <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#c0392b] to-transparent" />
       <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-[#9b8a70]">
         <div>
-          <div className="mb-2 font-bold tracking-wide text-[var(--accent)]">감컴퍼니 삼국지서버</div>
-          <p className="leading-7">감컴퍼니 삼국지 세계관과 세력 구도를 정리한 서버 안내 페이지입니다.</p>
+          <p className="max-w-5xl text-[13px] font-medium leading-7 text-[#d7c5a4] md:text-sm">
+            본 사이트는 비영리 팬 사이트이며, 모든 콘텐츠의 저작권은 원저작권자에게 있습니다.
+            <br />
+            사이트에 표시되는 정보는 편의를 위해 정리한 참고용 자료이며, 실제 서버 내 정보와 다를 수 있습니다.
+            <br />
+          </p>
+          <p className="mt-3 font-bold leading-7 text-[#f0c98b]">Create By 욱기!</p>
         </div>
       </div>
     </footer>

@@ -48,7 +48,7 @@ export default async function FactionsPage() {
     <div className="mx-auto max-w-7xl px-4 py-10 font-['Noto_Sans_KR','Malgun_Gothic',sans-serif]">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[#f3e7d0]">세력 정보</h1>
+          <h1 className="text-2xl font-black text-[#f3e7d0]">장비현황</h1>
         </div>
 
         <div className="pixel-frame px-4 py-3">

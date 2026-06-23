@@ -13,6 +13,9 @@ type ChronicleRow = {
   nation: string;
   content: string;
   is_deleted: boolean;
+  approval_status: "pending" | "approved" | "rejected";
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
   author_name: string;
   created_at: string;
 };
@@ -29,6 +32,18 @@ const nationBadgeClassMap: Record<string, string> = {
   위나라: "bg-[#3f6797] text-white",
   촉나라: "bg-[#3f8153] text-white",
   오나라: "bg-[#b43d2f] text-white"
+};
+
+const approvalStatusLabelMap: Record<ChronicleRow["approval_status"], string> = {
+  pending: "승인 대기",
+  approved: "승인됨",
+  rejected: "반려됨"
+};
+
+const approvalStatusClassMap: Record<ChronicleRow["approval_status"], string> = {
+  pending: "bg-[#d4a756]/18 text-[#f7d79d] ring-[#d4a756]/38",
+  approved: "bg-[#2f9b5f]/22 text-[#ddffea] ring-[#2f9b5f]/42",
+  rejected: "bg-[#b43d2f]/24 text-[#ffe0dd] ring-[#b43d2f]/44"
 };
 
 const fixedCreateYear = "2026";
@@ -80,7 +95,16 @@ function buildDateString(form: ChronicleForm) {
 }
 
 function sortEntriesAscending(entries: ChronicleRow[]) {
+  const statusOrder: Record<ChronicleRow["approval_status"], number> = {
+    pending: 1,
+    approved: 2,
+    rejected: 3
+  };
+
   return [...entries].sort((left, right) => {
+    const statusDiff = statusOrder[left.approval_status] - statusOrder[right.approval_status];
+    if (statusDiff !== 0) return statusDiff;
+
     const timeDiff = new Date(left.event_at).getTime() - new Date(right.event_at).getTime();
     if (timeDiff !== 0) return timeDiff;
     return left.id - right.id;
@@ -119,7 +143,7 @@ function DateSelectGroup({
   );
 }
 
-export function AdminChronicleEditor() {
+export function AdminChronicleEditor({ role }: { role: "master" | "manager" | "sub_manager" }) {
   const [entries, setEntries] = useState<ChronicleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
@@ -251,7 +275,7 @@ export function AdminChronicleEditor() {
         [entry.id]: toChronicleForm(entry)
       }));
       setCreateForm(emptyForm);
-      setStatus("연대기를 추가했습니다.");
+      setStatus(entry.approval_status === "approved" ? "연대기를 추가했습니다." : "연대기가 승인 대기로 등록되었습니다. 마스터 승인 후 메인 화면에 반영됩니다.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "연대기를 추가하지 못했습니다.");
     } finally {
@@ -322,12 +346,48 @@ export function AdminChronicleEditor() {
     }
   }
 
+  async function reviewEntry(id: number, action: "approve" | "reject") {
+    setEditingId(id);
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/admin/chronicle", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action })
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(typeof data.message === "string" ? data.message : "연대기 상태를 변경하지 못했습니다.");
+      }
+
+      const entry = data.entry as ChronicleRow;
+      setEntries((current) => sortEntriesAscending(current.map((item) => (item.id === id ? entry : item))));
+      setEditForms((current) => ({
+        ...current,
+        [id]: toChronicleForm(entry)
+      }));
+      setStatus(action === "approve" ? "연대기를 메인 화면에 반영했습니다." : "연대기를 반려했습니다.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "연대기 상태를 변경하지 못했습니다.");
+    } finally {
+      setEditingId(null);
+    }
+  }
+
   return (
     <div className="grid gap-5 font-['Noto_Sans_KR','Malgun_Gothic',sans-serif]">
       <div id="admin-datepicker-portal" />
 
       <section className="pixel-frame admin-chronicle-create-panel p-5">
         <h2 className="mb-5 text-lg font-black text-[#f3e7d0]">연대기 추가</h2>
+        {role === "master" ? null : (
+          <p className="mb-4 text-sm leading-6 text-[#dbc292]">
+            일반 관리자가 추가한 연대기는 승인 대기로 등록되며, 마스터 승인 후 메인 화면에 반영됩니다.
+          </p>
+        )}
 
         <div className="grid gap-4 xl:grid-cols-[300px_240px_minmax(0,1fr)_140px]">
           <label className="grid gap-2">
@@ -410,8 +470,10 @@ export function AdminChronicleEditor() {
                   <th className="px-3 py-3 font-bold">발생일</th>
                   <th className="px-3 py-3 font-bold">국가</th>
                   <th className="px-3 py-3 font-bold">내용</th>
+                  <th className="px-3 py-3 font-bold">상태</th>
                   <th className="px-3 py-3 font-bold">작성자</th>
                   <th className="px-3 py-3 font-bold">작성일</th>
+                  <th className="px-3 py-3 font-bold">검수</th>
                   <th className="px-3 py-3 font-bold">수정</th>
                   <th className="px-3 py-3 font-bold">삭제</th>
                 </tr>
@@ -465,8 +527,39 @@ export function AdminChronicleEditor() {
                           className="h-11 min-w-[320px] rounded-lg border border-[var(--border)] bg-black/40 px-3 text-[#f3e7d0] outline-none"
                         />
                       </td>
+                      <td className="whitespace-nowrap px-3 py-3">
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ring-1 ${approvalStatusClassMap[entry.approval_status]}`}>
+                          {approvalStatusLabelMap[entry.approval_status]}
+                        </span>
+                      </td>
                       <td className="whitespace-nowrap px-3 py-3 text-[#cdb487]">{entry.author_name}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-[#cdb487]">{entry.created_at}</td>
+                      <td className="min-w-[150px] px-3 py-3">
+                        {role === "master" ? (
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => reviewEntry(entry.id, "approve")}
+                              disabled={editingId === entry.id || entry.approval_status === "approved"}
+                              className="admin-btn-save rounded-lg text-sm"
+                            >
+                              승인
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => reviewEntry(entry.id, "reject")}
+                              disabled={editingId === entry.id || entry.approval_status === "rejected"}
+                              className="admin-btn-delete rounded-lg text-sm"
+                            >
+                              반려
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="whitespace-nowrap text-sm leading-6 text-[#cdb487]">
+                            {entry.reviewed_by_name ? `${entry.reviewed_by_name} 검수` : "대기 중"}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3 py-3">
                         <button
                           type="button"
@@ -481,7 +574,7 @@ export function AdminChronicleEditor() {
                         <button
                           type="button"
                           onClick={() => deleteEntry(entry.id)}
-                          disabled={editingId === entry.id}
+                          disabled={editingId === entry.id || (role !== "master" && entry.approval_status === "approved")}
                           className="admin-btn-delete rounded-lg text-sm"
                         >
                           삭제

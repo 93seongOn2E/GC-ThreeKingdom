@@ -90,6 +90,7 @@ export async function getChronicleData(): Promise<ChroniclePayload[]> {
       to_char(event_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI') AS event_at
     FROM public.chronicle
     WHERE is_deleted = FALSE
+      AND approval_status = 'approved'
     ORDER BY event_at ASC, id ASC
     LIMIT 20
   `) as ChronicleRow[];

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
+  { href: "/admin/guide", label: "가이드" },
   { href: "/admin/map", label: "영토" },
-  { href: "/admin/factions", label: "세력" },
+  { href: "/admin/factions", label: "장비현황" },
   { href: "/admin/chronicle", label: "연대기" },
   { href: "/admin/password", label: "비밀번호 변경" }
 ];

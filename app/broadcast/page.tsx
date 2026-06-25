@@ -1,7 +1,8 @@
 import { getSql } from "@/lib/db";
 import { BroadcastDirectory, type MemberBroadcastRow } from "@/components/BroadcastDirectory";
 
-export const revalidate = 15;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function BroadcastPage() {
   const sql = getSql();
